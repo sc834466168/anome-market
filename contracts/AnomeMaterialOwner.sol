@@ -45,10 +45,7 @@ contract AnomeMaterialOwner is ERC721, ERC721Enumerable, ERC721URIStorage, ERC11
         return _materials[tokenId]._materialTokens;
     }
 
-    function safeMint(address to, string memory uri, uint256 transferFee, uint256 size) external payable {
-        uint256 tokenId = _tokenIdCounter.current();
-        _tokenIdCounter.increment();
-
+    function safeMint(address to, uint256 tokenId, string memory uri, uint256 transferFee, uint256 size) external payable {
         uint256 decimals = _token.decimals();
 
         uint256 mintFee = _mintFee * (10 ** decimals);
