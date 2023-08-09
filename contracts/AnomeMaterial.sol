@@ -16,6 +16,13 @@ contract AnomeMaterial is ERC1155, ERC1155URIStorage, ERC1155PresetMinterPauser,
         _setURI(newuri);
     }
 
+    function mint(address account, bytes memory data)
+        public
+    {
+        uint256 id = counter();
+        mint(account, id, data);
+    }
+
     function mint(address account, uint256 id, bytes memory data)
         public
     {
@@ -27,6 +34,18 @@ contract AnomeMaterial is ERC1155, ERC1155URIStorage, ERC1155PresetMinterPauser,
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
         return tokenId;
+    }
+
+    function mintBatch(address to, uint256 size,  bytes memory data)
+        public
+    {
+        uint256[] memory ids = new uint256[](size);
+
+        for(uint256 i = 0; i < size ;i++){
+            ids[i] = counter();
+        }
+
+        mintBatch(to, ids, data);
     }
 
     function mintBatch(address to, uint256[] memory ids,  bytes memory data)

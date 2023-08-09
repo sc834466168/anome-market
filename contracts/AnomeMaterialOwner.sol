@@ -7,16 +7,12 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 import "contracts/AnomeMaterial.sol";
 import "contracts/Utils.sol";
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Receiver.sol";
 
 contract AnomeMaterialOwner is ERC721, ERC721Enumerable, ERC721URIStorage, ERC1155Receiver, Ownable {
-    using Counters for Counters.Counter;
     using Utils for *;
-
-    Counters.Counter private _tokenIdCounter;
 
     ERC20 private _token;
 
@@ -42,57 +38,103 @@ contract AnomeMaterialOwner is ERC721, ERC721Enumerable, ERC721URIStorage, ERC11
         _mintFee = 1 * (10 ** decimals);
     }
 
+    function getMaterial(uint256 tokenId) public view returns (Material memory) {
+        return _materials[tokenId];
+    }
+
+    /**
+     * 获取剩余的素材1155的token信息
+     *
+     * Requirements:
+     *
+     * - `tokenId` NFT的tokenId, 也是交易市场中的项目id
+     */
     function getMaterialTokens(uint256 tokenId) public view returns (uint256[] memory) {
         return _materials[tokenId]._materialTokens;
     }
 
+    /**
+     * 获取所有素材1155的token信息, 用于校验
+     *
+     * Requirements:
+     *
+     * - `tokenId` NFT的tokenId, 也是交易市场中的项目id
+     */
+    function getMaterialAllTokens(uint256 tokenId) public view returns (uint256[] memory) {
+        return _materials[tokenId]._materialAllTokens;
+    }
+
+    /**
+     * 进行mint, 只有一次mint机会, 需要交易_mintFee预设的交易费用
+     * 需要提前授权_mintFee的费用交易授权
+     *
+     * Requirements:
+     *
+     * - `to` NFT的凭证的具体地址
+     * - `tokenId` NFT铸造的tokenId
+     * - `uri` NFT的metadata地址
+     * - `transferFee` 交易的费用
+     * - `size` 创建素材1155的数量
+     */
     function safeMint(address to, uint256 tokenId, string memory uri, uint256 transferFee, uint256 size) external payable {
+        //设置交易金额
+        Material storage material = _materials[tokenId];
+
+        require(!material.init, "Non-repeatable mint");
         uint256 mintFee = _mintFee;
 
         //判断是否有对应的token支付, 并转账
         _token.approve(owner(), mintFee);
-        require(_token.balanceOf(msg.sender) >= mintFee, "Underpayment of commission");
+        require(_token.balanceOf(msg.sender) >= mintFee, "transfer amount exceeds balance");
+
+        //授权不足
+        require(_token.allowance(msg.sender, address(this)) >= mintFee, "insufficient allowance");
+
+        //交易手续费
         _token.transferFrom(msg.sender, owner(), mintFee);
         _allTokens.push(tokenId);
 
-        //设置交易金额
-        Material storage material = _materials[tokenId];
         material._transferFee = transferFee;
-        material.init = true;
-        uint256[] memory ids = new uint256[](size);
-
-        for(uint256 i = 0; i < size; i++) {
-            ids[i] = _anomeMaterial.counter();
-        }
 
         //创建1155 token
-        _anomeMaterial.mintBatch(address(this), ids, tokenId.toBytes());
+        _anomeMaterial.mintBatch(address(this), size, tokenId.toBytes());
 
+        //nft创建
         _safeMint(to, tokenId);
         _setTokenURI(tokenId, uri);
 
-        for(uint256 i = 0; i < size; i++) {
-            material._materialAllTokens.push(ids[i]);
-            material._materialTokens.push(ids[i]);
-        }
+        material.init = true;
     }
 
+    /**
+     * 进行交易, 并转账给当前tokenId的owner用户, 并转账transferFee的50%的费用给owner用户
+     * 需要提前授权transferFee等值的费用交易授权
+     *
+     * Requirements:
+     *
+     * - `tokenId` NFT的tokenId
+     */
     function transferMaterialFrom(uint256 tokenId) external payable  {
         Material storage material = _materials[tokenId];
+        //nft拥有者
         address ownerOf = ownerOf(tokenId);
+        //当前合约拥有者
         address owner = owner();
+
         require(ownerOf != address(0), "ERC721: address zero is not a valid owner");
 
         uint256 mintFee = material._transferFee;
 
         //判断是否有对应的token支付, 并转账
-        require(_token.balanceOf(msg.sender) >= mintFee, "Underpayment of commission");
+        require(_token.balanceOf(msg.sender) >= mintFee, "transfer amount exceeds balance");
 
         //授权不足
-        require(_token.allowance(msg.sender, address(this)) >= mintFee, "Underpayment of commission");
+        require(_token.allowance(msg.sender, address(this)) >= mintFee, "insufficient allowance");
 
+        //交易费用至当前合约中
         _token.transferFrom(msg.sender, address(this), mintFee);
 
+        //进行分账
         _token.approve(address(this), mintFee);
         _token.transferFrom(address(this), ownerOf, mintFee / 2);
         _token.transferFrom(address(this), owner, mintFee / 2);
@@ -100,26 +142,60 @@ contract AnomeMaterialOwner is ERC721, ERC721Enumerable, ERC721URIStorage, ERC11
         require(material._materialTokens.length > 0, "Have closed the deal");
 
         _anomeMaterial.safeTransferFrom(address(this), msg.sender, material._materialTokens[0], 1, "");
+        emit TransferMaterial(address(this), msg.sender, tokenId, material._materialTokens[0]);
+
         material._materialTokens.remove(0);
     }
+
+    /**
+     * 交易素材事件, 
+     *
+     * Requirements:
+     *
+     * - `from` 来源
+     * - `to` 交易者
+     * - `tokenId` nft的tokenId
+     * - `materialTokenId` 素材tokenId
+     */
+    event TransferMaterial(address from, address to, uint256 tokenId, uint256 materialTokenId);
 
     function onERC1155Received(
         address,
         address,
+        uint256 id,
         uint256,
-        uint256,
-        bytes calldata
+        bytes calldata data
     ) public virtual override returns (bytes4) {
+        uint256 tokenId = data.toUint();
+        Material storage material = _materials[tokenId];
+        //拒绝铸造的数据创建
+        require(!material.init, "Non-repeatable mint");
+
+        //增加铸造完成的数据至缓存中
+        material._materialAllTokens.push(id);
+        material._materialTokens.push(id);
+        
         return IERC1155Receiver.onERC1155Received.selector;
     }
 
     function onERC1155BatchReceived(
         address,
         address,
+        uint256[] calldata ids,
         uint256[] calldata,
-        uint256[] calldata,
-        bytes calldata
+        bytes calldata data
     ) public virtual  override returns (bytes4 selector) {
+        uint256 tokenId = data.toUint();
+        Material storage material = _materials[tokenId];
+        //拒绝铸造的数据创建
+        require(!material.init, "Non-repeatable mint");
+
+        //增加铸造完成的数据至缓存中
+        for(uint256 i = 0; i < ids.length; i++) {
+            material._materialAllTokens.push(ids[i]);
+            material._materialTokens.push(ids[i]);
+        }
+
         return IERC1155Receiver.onERC1155BatchReceived.selector;
     }
 

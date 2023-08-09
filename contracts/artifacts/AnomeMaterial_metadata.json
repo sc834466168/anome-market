@@ -577,6 +577,24 @@
 				"inputs": [
 					{
 						"internalType": "address",
+						"name": "account",
+						"type": "address"
+					},
+					{
+						"internalType": "bytes",
+						"name": "data",
+						"type": "bytes"
+					}
+				],
+				"name": "mint",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
 						"name": "to",
 						"type": "address"
 					},
@@ -612,6 +630,29 @@
 						"internalType": "uint256[]",
 						"name": "ids",
 						"type": "uint256[]"
+					},
+					{
+						"internalType": "bytes",
+						"name": "data",
+						"type": "bytes"
+					}
+				],
+				"name": "mintBatch",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "to",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "size",
+						"type": "uint256"
 					},
 					{
 						"internalType": "bytes",
@@ -1161,11 +1202,11 @@
 			]
 		},
 		"contracts/AnomeMaterial.sol": {
-			"keccak256": "0x8ea666746899210a874326ce456b20a61f4e3e4ff0d13c2cc1924a71ada6dfa3",
+			"keccak256": "0x6d411737391e397aba863e010aaf0edcfc0ad0fa7d2a65b587a731b468cdc11f",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://718dd14c7cc1d68b8bc778b89a4c5c545fd181caee0ecf89734ad73f01bd1dcc",
-				"dweb:/ipfs/QmQefN7E2XsovjHyVCqAPR4sDz46H95dn2rJCpuy69aFQE"
+				"bzz-raw://4865eeab5ba907fe9c9c5daec8a8faaee9c463def8af1d281092b501311181d6",
+				"dweb:/ipfs/QmTDTTt5pBsQmo9W1snUdnzZeWKQQjvom2WKKHyQC1wVgq"
 			]
 		}
 	},
