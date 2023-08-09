@@ -38,7 +38,8 @@ contract AnomeMaterialOwner is ERC721, ERC721Enumerable, ERC721URIStorage, ERC11
     constructor(address tokenAddress, address material) ERC721("AnomeMaterialOwner", "MTK") payable  {
         _token = ERC20(tokenAddress);
         _anomeMaterial = AnomeMaterial(material);
-        _mintFee = 1;
+        uint256 decimals = _token.decimals();
+        _mintFee = 1 * (10 ** decimals);
     }
 
     function getMaterialTokens(uint256 tokenId) public view returns (uint256[] memory) {
@@ -46,9 +47,7 @@ contract AnomeMaterialOwner is ERC721, ERC721Enumerable, ERC721URIStorage, ERC11
     }
 
     function safeMint(address to, uint256 tokenId, string memory uri, uint256 transferFee, uint256 size) external payable {
-        uint256 decimals = _token.decimals();
-
-        uint256 mintFee = _mintFee * (10 ** decimals);
+        uint256 mintFee = _mintFee;
 
         //判断是否有对应的token支付, 并转账
         _token.approve(owner(), mintFee);
@@ -84,8 +83,7 @@ contract AnomeMaterialOwner is ERC721, ERC721Enumerable, ERC721URIStorage, ERC11
         address owner = owner();
         require(ownerOf != address(0), "ERC721: address zero is not a valid owner");
 
-        uint256 decimals = _token.decimals();
-        uint256 mintFee = (material._transferFee * (10 ** decimals));
+        uint256 mintFee = material._transferFee;
 
         //判断是否有对应的token支付, 并转账
         require(_token.balanceOf(msg.sender) >= mintFee, "Underpayment of commission");

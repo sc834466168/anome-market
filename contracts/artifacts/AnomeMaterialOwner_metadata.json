@@ -1074,11 +1074,11 @@
 			]
 		},
 		"contracts/AnomeMaterialOwner.sol": {
-			"keccak256": "0xdcab3c6c8e3783223af741b4d043dca0e6890302bb6898fb2edd1ef71ef72e4c",
+			"keccak256": "0xea0ff1d73e5e6f30530dc9a4b00d2dd2cd2e1d6bc196ace41f2d6189f859d4cc",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://646b3a7478eb6a2e50c9069a3c775662e762d3bcb01742b44f20f2685904f69f",
-				"dweb:/ipfs/QmQir6ZH7bJJA6wnyh8Kicsn7Z8LcmSCsckaJEtmwwYRDJ"
+				"bzz-raw://f8ef84ab3ee4cec01a6f5d16e558461b800ed10a4bc675f5f4f67b4a94b889cf",
+				"dweb:/ipfs/QmXCjgjwovDWGZzif9oxYtJ1VuVbs4bxP9JmKYQfDkKAe6"
 			]
 		},
 		"contracts/Utils.sol": {
