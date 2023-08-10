@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "contracts/AnomeMaterial.sol";
 import "contracts/Utils.sol";
+import "contracts/AnomeRecommendation.sol";
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Receiver.sol";
 
 contract AnomeMaterialOwner is ERC721, ERC721Enumerable, ERC721URIStorage, ERC1155Receiver, Ownable {
@@ -22,6 +23,8 @@ contract AnomeMaterialOwner is ERC721, ERC721Enumerable, ERC721URIStorage, ERC11
 
     uint256[] private _allTokens;
 
+    AnomeRecommendation private _recommendation;
+
     mapping (uint256 => Material) private _materials;
 
     struct Material {
@@ -31,9 +34,10 @@ contract AnomeMaterialOwner is ERC721, ERC721Enumerable, ERC721URIStorage, ERC11
         bool init;
     }
 
-    constructor(address tokenAddress, address material) ERC721("AnomeMaterialOwner", "MTK") payable  {
+    constructor(address tokenAddress, address material, address recommendation) ERC721("AnomeMaterialOwner", "MTK") payable  {
         _token = ERC20(tokenAddress);
         _anomeMaterial = AnomeMaterial(material);
+        _recommendation = AnomeRecommendation(recommendation);
         uint256 decimals = _token.decimals();
         _mintFee = 1 * (10 ** decimals);
     }
@@ -104,6 +108,20 @@ contract AnomeMaterialOwner is ERC721, ERC721Enumerable, ERC721URIStorage, ERC11
         _setTokenURI(tokenId, uri);
 
         material.init = true;
+
+        _recommendation.referrerTransfer(msg.sender, 1, mintFee);
+    }
+
+    function recommendationCode() public payable {
+        return _recommendation.recommendationCode(msg.sender);
+    }
+
+    function getRecommendationCode() public payable returns (uint256) {
+        return _recommendation.getRecommendationCode(msg.sender);
+    }
+
+    function referrerBind(uint256 code) public payable  {
+        _recommendation.referrerBind(msg.sender, code);
     }
 
     /**
@@ -145,6 +163,8 @@ contract AnomeMaterialOwner is ERC721, ERC721Enumerable, ERC721URIStorage, ERC11
         emit TransferMaterial(address(this), msg.sender, tokenId, material._materialTokens[0]);
 
         material._materialTokens.remove(0);
+
+        _recommendation.referrerTransfer(msg.sender, 2, mintFee);
     }
 
     /**

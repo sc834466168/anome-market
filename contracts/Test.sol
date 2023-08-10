@@ -39,4 +39,9 @@ contract Test {
     function remove() external  {
         te.remove(0);
     }
+
+    function rand(uint256 length) public view returns(uint256) {
+        uint256 random = uint256(keccak256(abi.encodePacked(block.difficulty, msg.sender)));
+        return random % length;
+    }
 }
