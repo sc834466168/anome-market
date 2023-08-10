@@ -193,6 +193,9 @@ contract AnomeMaterialOwner is ERC1155Receiver, Initializable, OwnableUpgradeabl
      */
     event TransferMaterial(address from, address to, uint256 tokenId, uint256 materialTokenId);
 
+
+    event MintMaterial(address to, uint256 tokenId, uint256[] materialTokenIds);
+
     function onERC1155Received(
         address,
         address,
@@ -214,7 +217,7 @@ contract AnomeMaterialOwner is ERC1155Receiver, Initializable, OwnableUpgradeabl
 
     function onERC1155BatchReceived(
         address,
-        address,
+        address to,
         uint256[] calldata ids,
         uint256[] calldata,
         bytes calldata data
@@ -230,6 +233,7 @@ contract AnomeMaterialOwner is ERC1155Receiver, Initializable, OwnableUpgradeabl
             material._materialTokens.push(ids[i]);
         }
 
+        emit MintMaterial(to, tokenId, ids);
         return IERC1155Receiver.onERC1155BatchReceived.selector;
     }
 
