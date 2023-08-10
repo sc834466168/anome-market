@@ -3,18 +3,21 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "contracts/AnomeMaterial.sol";
 import "contracts/Utils.sol";
+import "contracts/AnomeBill.sol";
 import "contracts/AnomeRecommendation.sol";
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Receiver.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
-contract AnomeMaterialOwner is ERC721, ERC721Enumerable, ERC721URIStorage, ERC1155Receiver, Ownable {
+
+contract AnomeMaterialOwner is ERC1155Receiver, Initializable, OwnableUpgradeable, UUPSUpgradeable{
     using Utils for *;
 
+    AnomeBill private _nft;
     ERC20 private _token;
 
     AnomeMaterial private _anomeMaterial;
@@ -34,13 +37,25 @@ contract AnomeMaterialOwner is ERC721, ERC721Enumerable, ERC721URIStorage, ERC11
         bool init;
     }
 
-    constructor(address tokenAddress, address material, address recommendation) ERC721("AnomeMaterialOwner", "MTK") payable  {
+    constructor(address tokenAddress, address material, address recommendation) payable  {
         _token = ERC20(tokenAddress);
         _anomeMaterial = AnomeMaterial(material);
         _recommendation = AnomeRecommendation(recommendation);
         uint256 decimals = _token.decimals();
         _mintFee = 1 * (10 ** decimals);
+        _disableInitializers();
     }
+
+    function initialize() initializer public {
+        __Ownable_init();
+        __UUPSUpgradeable_init();
+    }
+
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        onlyOwner
+        override
+    {}
 
     function getMaterial(uint256 tokenId) public view returns (Material memory) {
         return _materials[tokenId];
@@ -101,11 +116,10 @@ contract AnomeMaterialOwner is ERC721, ERC721Enumerable, ERC721URIStorage, ERC11
         material._transferFee = transferFee;
 
         //创建1155 token
-        _anomeMaterial.mintBatch(address(this), size, tokenId.toBytes());
+        _anomeMaterial.mintBatch(address(this), size, uri, tokenId.toBytes());
 
         //nft创建
-        _safeMint(to, tokenId);
-        _setTokenURI(tokenId, uri);
+        _nft.safeMint(to, tokenId, uri);
 
         material.init = true;
 
@@ -135,7 +149,7 @@ contract AnomeMaterialOwner is ERC721, ERC721Enumerable, ERC721URIStorage, ERC11
     function transferMaterialFrom(uint256 tokenId) external payable  {
         Material storage material = _materials[tokenId];
         //nft拥有者
-        address ownerOf = ownerOf(tokenId);
+        address ownerOf = _nft.ownerOf(tokenId);
         //当前合约拥有者
         address owner = owner();
 
@@ -217,37 +231,6 @@ contract AnomeMaterialOwner is ERC721, ERC721Enumerable, ERC721URIStorage, ERC11
         }
 
         return IERC1155Receiver.onERC1155BatchReceived.selector;
-    }
-
-    // The following functions are overrides required by Solidity.
-
-    function _beforeTokenTransfer(address from, address to, uint256 tokenId, uint256 batchSize)
-        internal
-        override(ERC721, ERC721Enumerable)
-    {
-        super._beforeTokenTransfer(from, to, tokenId, batchSize);
-    }
-
-    function _burn(uint256 tokenId) internal override(ERC721, ERC721URIStorage) {
-        super._burn(tokenId);
-    }
-
-    function tokenURI(uint256 tokenId)
-        public
-        view
-        override(ERC721, ERC721URIStorage)
-        returns (string memory)
-    {
-        return super.tokenURI(tokenId);
-    }
-
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        override(ERC721, ERC721Enumerable, ERC721URIStorage, ERC1155Receiver)
-        returns (bool)
-    {
-        return super.supportsInterface(interfaceId);
     }
 
     function convert(uint256 number) public pure returns (string memory) {
