@@ -37,19 +37,24 @@ contract AnomeMaterialOwner is ERC1155Receiver, Initializable, OwnableUpgradeabl
         bool init;
     }
 
-    constructor(address tokenAddress, address nft, address material, address recommendation) payable  {
-        _token = ERC20(tokenAddress);
-        _anomeMaterial = AnomeMaterial(material);
-        _nft = AnomeBill(nft);
-        _recommendation = AnomeRecommendation(recommendation);
-        uint256 decimals = _token.decimals();
-        _mintFee = 1 * (10 ** decimals);
+    constructor()  {
         _disableInitializers();
+
     }
 
     function initialize() initializer public {
         __Ownable_init();
         __UUPSUpgradeable_init();
+    }
+
+    function start(address tokenAddress, address nft, address material, address recommendation) public onlyOwner payable {
+
+        _token = ERC20(tokenAddress);
+        _nft = AnomeBill(nft);
+        _anomeMaterial = AnomeMaterial(material);
+        _recommendation = AnomeRecommendation(recommendation);
+        uint256 decimals = _token.decimals();
+        _mintFee = 1 * (10 ** decimals);
     }
 
     function _authorizeUpgrade(address newImplementation)
