@@ -37,9 +37,10 @@ contract AnomeMaterialOwner is ERC1155Receiver, Initializable, OwnableUpgradeabl
         bool init;
     }
 
-    constructor(address tokenAddress, address material, address recommendation) payable  {
+    constructor(address tokenAddress, address nft, address material, address recommendation) payable  {
         _token = ERC20(tokenAddress);
         _anomeMaterial = AnomeMaterial(material);
+        _nft = AnomeBill(nft);
         _recommendation = AnomeRecommendation(recommendation);
         uint256 decimals = _token.decimals();
         _mintFee = 1 * (10 ** decimals);
@@ -130,7 +131,7 @@ contract AnomeMaterialOwner is ERC1155Receiver, Initializable, OwnableUpgradeabl
         return _recommendation.recommendationCode(msg.sender);
     }
 
-    function getRecommendationCode() public payable returns (uint256) {
+    function getRecommendationCode() public view returns (uint256) {
         return _recommendation.getRecommendationCode(msg.sender);
     }
 
