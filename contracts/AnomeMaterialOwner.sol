@@ -34,6 +34,7 @@ contract AnomeMaterialOwner is ERC1155Receiver, Initializable, OwnableUpgradeabl
         uint256[] _materialTokens;
         uint256[] _materialAllTokens;
         uint256 _transferFee;
+        address to;
         bool init;
     }
 
@@ -62,6 +63,15 @@ contract AnomeMaterialOwner is ERC1155Receiver, Initializable, OwnableUpgradeabl
         onlyOwner
         override
     {}
+
+    function getMintFee() public view returns (uint256) {
+        return _mintFee;
+    }
+
+    function getTransferFee(uint256 tokenId) public view returns (uint256) {
+        Material storage material = _materials[tokenId];
+        return material._transferFee;
+    }
 
     function getMaterial(uint256 tokenId) public view returns (Material memory) {
         return _materials[tokenId];
@@ -128,7 +138,7 @@ contract AnomeMaterialOwner is ERC1155Receiver, Initializable, OwnableUpgradeabl
         _nft.safeMint(to, tokenId, uri);
 
         material.init = true;
-
+        material.to = to;
         _recommendation.referrerTransfer(msg.sender, 1, mintFee);
     }
 
@@ -239,7 +249,7 @@ contract AnomeMaterialOwner is ERC1155Receiver, Initializable, OwnableUpgradeabl
             material._materialTokens.push(ids[i]);
         }
 
-        emit MintMaterial(to, tokenId, ids);
+        emit MintMaterial(material.to, tokenId, ids);
         return IERC1155Receiver.onERC1155BatchReceived.selector;
     }
 
