@@ -26,6 +26,8 @@ contract AnomeMaterialOwner is ERC1155Receiver, Initializable, OwnableUpgradeabl
 
     uint256[] private _allTokens;
 
+    address _self;
+
     AnomeRecommendation private _recommendation;
 
     mapping (uint256 => Material) private _materials;
@@ -48,12 +50,13 @@ contract AnomeMaterialOwner is ERC1155Receiver, Initializable, OwnableUpgradeabl
         __UUPSUpgradeable_init();
     }
 
-    function start(address tokenAddress, address nft, address material, address recommendation) public onlyOwner payable {
+    function start(address tokenAddress, address nft, address material, address recommendation, address self) public onlyOwner payable {
 
         _token = ERC20(tokenAddress);
         _nft = AnomeBill(nft);
         _anomeMaterial = AnomeMaterial(material);
         _recommendation = AnomeRecommendation(recommendation);
+        _self = self;
         uint256 decimals = _token.decimals();
         _mintFee = 1 * (10 ** decimals);
     }
@@ -123,23 +126,22 @@ contract AnomeMaterialOwner is ERC1155Receiver, Initializable, OwnableUpgradeabl
         require(_token.balanceOf(msg.sender) >= mintFee, "transfer amount exceeds balance");
 
         //授权不足
-        require(_token.allowance(msg.sender, address(this)) >= mintFee, "insufficient allowance");
+        require(_token.allowance(msg.sender, _self) >= mintFee, "insufficient allowance");
 
         //交易手续费
         _token.transferFrom(msg.sender, owner(), mintFee);
         _allTokens.push(tokenId);
 
         material._transferFee = transferFee;
+        material.to = to;
+        material.init = true;
 
         //创建1155 token
-        _anomeMaterial.mintBatch(address(this), size, uri, tokenId.toBytes());
-
-        //nft创建
-        material.to = to;
+        _anomeMaterial.mintBatch(_self, size, uri, tokenId.toBytes());
         
+        //nft创建
         _nft.safeMint(to, tokenId, uri);
 
-        material.init = true;
         _recommendation.referrerTransfer(msg.sender, 1, mintFee);
     }
 
@@ -178,20 +180,20 @@ contract AnomeMaterialOwner is ERC1155Receiver, Initializable, OwnableUpgradeabl
         require(_token.balanceOf(msg.sender) >= mintFee, "transfer amount exceeds balance");
 
         //授权不足
-        require(_token.allowance(msg.sender, address(this)) >= mintFee, "insufficient allowance");
+        require(_token.allowance(msg.sender, _self) >= mintFee, "insufficient allowance");
 
         //交易费用至当前合约中
-        _token.transferFrom(msg.sender, address(this), mintFee);
+        _token.transferFrom(msg.sender, _self, mintFee);
 
         //进行分账
-        _token.approve(address(this), mintFee);
-        _token.transferFrom(address(this), ownerOf, mintFee / 2);
-        _token.transferFrom(address(this), owner, mintFee / 2);
+        _token.approve(_self, mintFee);
+        _token.transferFrom(_self, ownerOf, mintFee / 2);
+        _token.transferFrom(_self, owner, mintFee / 2);
 
         require(material._materialTokens.length > 0, "Have closed the deal");
 
-        _anomeMaterial.safeTransferFrom(address(this), msg.sender, material._materialTokens[0], 1, "");
-        emit TransferMaterial(address(this), msg.sender, tokenId, material._materialTokens[0]);
+        _anomeMaterial.safeTransferFrom(_self, msg.sender, material._materialTokens[0], 1, "");
+        emit TransferMaterial(_self, msg.sender, tokenId, material._materialTokens[0]);
 
         material._materialTokens.remove(0);
 
@@ -223,7 +225,7 @@ contract AnomeMaterialOwner is ERC1155Receiver, Initializable, OwnableUpgradeabl
         uint256 tokenId = data.toUint();
         Material storage material = _materials[tokenId];
         //拒绝铸造的数据创建
-        require(!material.init, "Non-repeatable mint");
+        require(material.init, "Non-repeatable mint");
 
         //增加铸造完成的数据至缓存中
         material._materialAllTokens.push(id);
@@ -234,7 +236,7 @@ contract AnomeMaterialOwner is ERC1155Receiver, Initializable, OwnableUpgradeabl
 
     function onERC1155BatchReceived(
         address,
-        address to,
+        address,
         uint256[] calldata ids,
         uint256[] calldata,
         bytes calldata data
@@ -242,7 +244,7 @@ contract AnomeMaterialOwner is ERC1155Receiver, Initializable, OwnableUpgradeabl
         uint256 tokenId = data.toUint();
         Material storage material = _materials[tokenId];
         //拒绝铸造的数据创建
-        require(!material.init, "Non-repeatable mint");
+        require(material.init, "Non-repeatable mint");
 
         //增加铸造完成的数据至缓存中
         for(uint256 i = 0; i < ids.length; i++) {

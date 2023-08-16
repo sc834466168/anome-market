@@ -13,6 +13,10 @@ library Utils {
         return string(numberInBytes);
     }
 
+    function toString(bytes memory number) public pure returns (string memory) {
+        return string(number);
+    }
+
     function toUint(bytes calldata data) public pure returns (uint256) {
         return uint256(bytes32(data));
     }
