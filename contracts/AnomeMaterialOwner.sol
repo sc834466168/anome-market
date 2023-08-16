@@ -135,10 +135,11 @@ contract AnomeMaterialOwner is ERC1155Receiver, Initializable, OwnableUpgradeabl
         _anomeMaterial.mintBatch(address(this), size, uri, tokenId.toBytes());
 
         //nft创建
+        material.to = to;
+        
         _nft.safeMint(to, tokenId, uri);
 
         material.init = true;
-        material.to = to;
         _recommendation.referrerTransfer(msg.sender, 1, mintFee);
     }
 
