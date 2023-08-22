@@ -86,8 +86,11 @@ contract AnomeRule is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
         ruleProperties.active = true;
         projectIds.push(projectId);
+
+        emit ChangeRule(true, ruleProperties.projectId, ruleProperties.contractAddress, ruleProperties.ownerAddress, ruleProperties.nftAddress, ruleProperties.received, ruleProperties.total, ruleProperties.version);
     }
 
+    event ChangeRule(bool isStart, uint256 projectId, address contractAddress, address ownerAddress, address nftAddress, uint256 received, uint256 total, RuleVersion version);
 
     /**
      * 停止规则, 并返还token
@@ -100,11 +103,14 @@ contract AnomeRule is Initializable, OwnableUpgradeable, UUPSUpgradeable {
      * 
      */
     function stopRule(uint256 projectId) public onlyProjectOwner(projectId) {
-        require(!ruleManage[projectId].active, "The projectId rule already exist");
+        RuleProperties storage ruleProperties = ruleManage[projectId];
+        require(!ruleProperties.active, "The projectId rule already exist");
 
-        IERC20 _token = IERC20(ruleManage[projectId].contractAddress); 
-        _token.transfer(ruleManage[projectId].ownerAddress, ruleManage[projectId].amount);
+        IERC20 _token = IERC20(ruleProperties.contractAddress); 
+        _token.transfer(ruleProperties.ownerAddress, ruleProperties.amount);
         delete ruleManage[projectId];
+
+        emit ChangeRule(false, ruleProperties.projectId, ruleProperties.contractAddress, ruleProperties.ownerAddress, ruleProperties.nftAddress, ruleProperties.received, ruleProperties.total, ruleProperties.version);
     }
 
     /**
