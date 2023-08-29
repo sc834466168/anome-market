@@ -38,6 +38,7 @@ contract AnomeMaterialOwner is ERC1155Receiver, Initializable, OwnableUpgradeabl
         uint256 _transferFee;
         address to;
         bool init;
+        uint256 earnings;
     }
 
     constructor()  {
@@ -69,6 +70,16 @@ contract AnomeMaterialOwner is ERC1155Receiver, Initializable, OwnableUpgradeabl
 
     function getMintFee() public view returns (uint256) {
         return _mintFee;
+    }
+
+    function getEarnings(uint256 tokenId) public view returns (uint256) {
+        Material storage material = _materials[tokenId];
+        //nft拥有者
+        address ownerOf = _nft.ownerOf(tokenId);
+        //当前合约拥有者
+        address owner = owner();
+        require(msg.sender == owner || msg.sender == ownerOf, "No access getEarnings");
+        return material.earnings;
     }
 
     function getTransferFee(uint256 tokenId) public view returns (uint256) {
@@ -184,16 +195,19 @@ contract AnomeMaterialOwner is ERC1155Receiver, Initializable, OwnableUpgradeabl
 
         //交易费用至当前合约中
         _token.transferFrom(msg.sender, _self, mintFee);
-
+        uint256 earnings = mintFee / 2;
         //进行分账
         _token.approve(_self, mintFee);
-        _token.transferFrom(_self, ownerOf, mintFee / 2);
-        _token.transferFrom(_self, owner, mintFee / 2);
+        _token.transferFrom(_self, ownerOf, earnings);
+        _token.transferFrom(_self, owner, earnings);
 
         require(material._materialTokens.length > 0, "Have closed the deal");
 
         _anomeMaterial.safeTransferFrom(_self, msg.sender, material._materialTokens[0], 1, "");
-        emit TransferMaterial(_self, msg.sender, tokenId, material._materialTokens[0]);
+
+        material.earnings += earnings;
+
+        emit TransferMaterial(ownerOf, msg.sender, tokenId, material._materialTokens[0]);
 
         material._materialTokens.remove(0);
 
@@ -205,13 +219,12 @@ contract AnomeMaterialOwner is ERC1155Receiver, Initializable, OwnableUpgradeabl
      *
      * Requirements:
      *
-     * - `from` 来源
+     * - `from` 来源nft的用户
      * - `to` 交易者
      * - `tokenId` nft的tokenId
      * - `materialTokenId` 素材tokenId
      */
     event TransferMaterial(address from, address to, uint256 tokenId, uint256 materialTokenId);
-
 
     event MintMaterial(address to, uint256 tokenId, uint256[] materialTokenIds);
 
