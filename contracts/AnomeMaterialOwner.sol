@@ -93,7 +93,7 @@ contract AnomeMaterialOwner is ERC1155Receiver, Initializable, OwnableUpgradeabl
 
     function initEarnings(uint256 tokenId) public onlyOwner payable {
         Material storage material = _materials[tokenId];
-        material._materialTokens
+        material.earnings = material._materialTokens.length * (material._transferFee / 2);
     }
 
     /**
