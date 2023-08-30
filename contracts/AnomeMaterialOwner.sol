@@ -91,6 +91,11 @@ contract AnomeMaterialOwner is ERC1155Receiver, Initializable, OwnableUpgradeabl
         return _materials[tokenId];
     }
 
+    function initEarnings(uint256 tokenId) public onlyOwner payable {
+        Material storage material = _materials[tokenId];
+        material._materialTokens
+    }
+
     /**
      * 获取剩余的素材1155的token信息
      *
