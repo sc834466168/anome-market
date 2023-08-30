@@ -93,7 +93,7 @@ contract AnomeMaterialOwner is ERC1155Receiver, Initializable, OwnableUpgradeabl
 
     function initEarnings(uint256 tokenId) public onlyOwner payable {
         Material storage material = _materials[tokenId];
-        material.earnings = material._materialTokens.length * (material._transferFee / 2);
+        material.earnings = (material._materialAllTokens.length - material._materialTokens.length) * (material._transferFee / 2);
     }
 
     /**
@@ -212,7 +212,7 @@ contract AnomeMaterialOwner is ERC1155Receiver, Initializable, OwnableUpgradeabl
 
         material.earnings += earnings;
 
-        emit TransferMaterial(ownerOf, msg.sender, tokenId, material._materialTokens[0]);
+        emit TransferEarningsMaterial(ownerOf, msg.sender, tokenId, material._materialTokens[0], earnings);
 
         material._materialTokens.remove(0);
 
@@ -229,7 +229,7 @@ contract AnomeMaterialOwner is ERC1155Receiver, Initializable, OwnableUpgradeabl
      * - `tokenId` nft的tokenId
      * - `materialTokenId` 素材tokenId
      */
-    event TransferMaterial(address from, address to, uint256 tokenId, uint256 materialTokenId);
+    event TransferEarningsMaterial(address from, address to, uint256 tokenId, uint256 materialTokenId, uint256 earnings);
 
     event MintMaterial(address to, uint256 tokenId, uint256[] materialTokenIds);
 
