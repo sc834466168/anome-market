@@ -212,7 +212,7 @@ contract AnomeMaterialOwner is ERC1155Receiver, Initializable, OwnableUpgradeabl
 
         material.earnings += earnings;
 
-        emit TransferEarningsMaterial(ownerOf, msg.sender, tokenId, material._materialTokens[0], earnings);
+        emit TransferEarningsMaterial(ownerOf, msg.sender, tokenId, material._materialTokens[0], earnings, mintFee);
 
         material._materialTokens.remove(0);
 
@@ -229,7 +229,7 @@ contract AnomeMaterialOwner is ERC1155Receiver, Initializable, OwnableUpgradeabl
      * - `tokenId` nft的tokenId
      * - `materialTokenId` 素材tokenId
      */
-    event TransferEarningsMaterial(address from, address to, uint256 tokenId, uint256 materialTokenId, uint256 earnings);
+    event TransferEarningsMaterial(address from, address to, uint256 tokenId, uint256 materialTokenId, uint256 earnings, uint256 transferFee); 
 
     event MintMaterial(address to, uint256 tokenId, uint256[] materialTokenIds);
 
